@@ -1,0 +1,32 @@
+{
+  "name": "jpm-cli",
+  "version": "1.0.0",
+  "description": "Jatrick Project Manager (JPM) - Spec-Driven Development CLI for AI Agents",
+  "bin": {
+    "jpm": "./bin/jpm.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "keywords": [
+    "cli",
+    "project-management",
+    "ai",
+    "gemini",
+    "claude",
+    "gpt",
+    "spec-driven"
+  ],
+  "author": "Jatrick",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jpatrick-Phan/JPM.git"
+  },
+  "files": [
+    "bin",
+    ".jpm",
+    "scripts"
+  ]
+}

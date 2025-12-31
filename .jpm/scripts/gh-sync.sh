@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# G-PM: GitHub Sync Utility
+# JPM: GitHub Sync Utility
 # Usage: ./gh-sync.sh [command] [args]
 
 function check_gh {
@@ -13,10 +13,10 @@ function check_gh {
 case "$1" in
     setup-labels)
         check_gh
-        echo "Creating G-PM labels..."
-        gh label create "gpm-task" --color "0E8A16" --description "Task managed by G-PM" --force
-        gh label create "gpm-epic" --color "1D76DB" --description "Epic/Architecture managed by G-PM" --force
-        gh label create "gpm-blocked" --color "B60205" --description "Blocked waiting for user/spec" --force
+        echo "Creating JPM labels..."
+        gh label create "jpm-task" --color "0E8A16" --description "Task managed by JPM" --force
+        gh label create "jpm-epic" --color "1D76DB" --description "Epic/Architecture managed by JPM" --force
+        gh label create "jpm-blocked" --color "B60205" --description "Blocked waiting for user/spec" --force
         echo "Labels verified."
         ;;
     create-issue)
@@ -31,7 +31,7 @@ case "$1" in
         # Create Issue
         # Note: We use the file content as the body. 
         # In a real scenario we might want to strip metadata or add a footer.
-        URL=$(gh issue create --title "$TITLE" --body-file "$FILE_PATH" --label "gpm-task")
+        URL=$(gh issue create --title "$TITLE" --body-file "$FILE_PATH" --label "jpm-task")
         
         echo "Created Issue: $URL"
         
@@ -49,6 +49,6 @@ case "$1" in
         gh issue comment "$ISSUE_ID" --body "$COMMENT"
         ;;
     *)
-        echo "Usage: ./gh-sync.sh {setup-labels|create-issue|update-issue}"
+        echo "Usage: ./gh-sync.sh [setup-labels|create-issue|update-issue]"
         ;;
 esac
