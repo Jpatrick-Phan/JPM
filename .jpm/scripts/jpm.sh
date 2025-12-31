@@ -21,6 +21,15 @@ TEMPLATE_DIR="$JPM_HOME/templates"
 CORE_DIR="$JPM_HOME/core"
 SCRIPTS_DIR="$JPM_HOME/scripts"
 
+# Detect Python command
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    PYTHON_CMD=""
+fi
+
 function show_help {
     echo "JPM: Jatrick Project Manager (Global CLI Edition) v$JPM_VERSION"
     echo "JPM_HOME: $JPM_HOME"
@@ -42,6 +51,34 @@ function check_init {
         echo "Error: JPM is not initialized in this project."
         echo "Run 'jpm init' to create .jpm structure."
         exit 1
+    fi
+}
+
+function update_project_map {
+    local feature="$1"
+    local map_file="$PROJECT_CONTEXT/project-map.json"
+    
+    if [ -z "$PYTHON_CMD" ]; then return; fi
+    
+    if [ -f "$map_file" ]; then
+        # Use Python to safely update JSON
+        "$PYTHON_CMD" -c "
+import sys, json, os
+try:
+    with open('$map_file', 'r') as f:
+        data = json.load(f)
+    
+    if 'features' not in data:
+        data['features'] = []
+        
+    if '$feature' not in data['features']:
+        data['features'].append('$feature')
+        with open('$map_file', 'w') as f:
+            json.dump(data, f, indent=2)
+        print('Updated project-map.json with feature: $feature')
+except Exception as e:
+    print(f'Warning: Could not update project-map.json: {e}')
+"
     fi
 }
 
@@ -100,6 +137,9 @@ case "$1" in
                 echo "Created PRD draft: $TARGET"
                 echo "Tip: You can now edit this file or use 'jpm gen' to fill it."
             fi
+            
+            # Update Project Map
+            update_project_map "$FEATURE"
         else
             echo "Error: Template not found at $TEMPLATE_DIR/PRD_TEMPLATE.md"
             exit 1
@@ -137,6 +177,9 @@ case "$1" in
                 echo "Created Architecture draft: $TARGET"
                 echo "Tip: No PRD found. You can manually edit this file."
             fi
+            
+            # Update Project Map
+            update_project_map "$FEATURE"
         else
              echo "Error: Template not found at $TEMPLATE_DIR/ARCHITECT_TEMPLATE.md"
              exit 1
@@ -146,8 +189,66 @@ case "$1" in
         check_init
         FEATURE=$2
         if [ -z "$FEATURE" ]; then echo "Usage: jpm split [feature_name]"; exit 1; fi
-        echo "Ready to split tasks for $FEATURE."
-        echo "Action: Ask AI to 'Decompose arch-$FEATURE.md into tasks in $PROJECT_STORAGE/tasks/ using format task-[id]-[name].md'"
+        
+        ARCH_SOURCE="$PROJECT_STORAGE/epics/arch-$FEATURE.md"
+        TASK_TEMPLATE="$TEMPLATE_DIR/TASK_TEMPLATE.md"
+        
+        if [ ! -f "$ARCH_SOURCE" ]; then
+            echo "Error: Architecture file not found: $ARCH_SOURCE"
+            exit 1
+        fi
+        
+        echo "Analyzing Architecture for Task Decomposition..."
+        
+        TEMP_PROMPT=$(mktemp)
+        echo "You are a Technical Lead. Decompose the following Architecture into atomic development tasks." > "$TEMP_PROMPT"
+        echo "Output MUST be a JSON array of objects with 'filename' and 'content' keys." >> "$TEMP_PROMPT"
+        echo "Example: [{\"filename\": \"task-001-setup.md\", \"content\": \"...\"}]" >> "$TEMP_PROMPT"
+        echo "Use the following Task Template for content:" >> "$TEMP_PROMPT"
+        cat "$TASK_TEMPLATE" >> "$TEMP_PROMPT"
+        echo "--- ARCHITECTURE ---" >> "$TEMP_PROMPT"
+        cat "$ARCH_SOURCE" >> "$TEMP_PROMPT"
+        
+        # Call AI to generate JSON
+        JSON_OUTPUT=$(bash "$SCRIPTS_DIR/ai.sh" generate "$TEMP_PROMPT")
+        rm "$TEMP_PROMPT"
+        
+        # Parse JSON and create files using Python
+        if [ -n "$PYTHON_CMD" ]; then
+            echo "$JSON_OUTPUT" | "$PYTHON_CMD" -c "
+import sys, json, os
+
+try:
+    raw_input = sys.stdin.read()
+    # Try to find JSON array in the output (in case of extra text)
+    start_idx = raw_input.find('[')
+    end_idx = raw_input.rfind(']') + 1
+    
+    if start_idx != -1 and end_idx != -1:
+        json_str = raw_input[start_idx:end_idx]
+        tasks = json.loads(json_str)
+        
+        output_dir = '$PROJECT_STORAGE/tasks'
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+            
+        for task in tasks:
+            filename = task.get('filename')
+            content = task.get('content')
+            if filename and content:
+                filepath = os.path.join(output_dir, filename)
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                print(f'Created task: {filepath}')
+    else:
+        print('Error: No JSON array found in AI response.')
+        print('Raw Output:', raw_input[:200] + '...')
+except Exception as e:
+    print(f'Error parsing tasks: {e}')
+"
+        else
+            echo "Error: Python not found. Cannot parse AI response."
+        fi
         ;;
     sync)
         check_init
