@@ -1,0 +1,11 @@
+{
+  "project_name": "Gemini Project Manager",
+  "last_updated": "",
+  "active_phase": "INIT",
+  "features": {},
+  "files_map": {
+    "core": ".gpm/core",
+    "templates": ".gpm/templates",
+    "scripts": ".gpm/scripts"
+  }
+}
