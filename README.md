@@ -2,6 +2,11 @@
 
 **JPM** is a Spec-Driven Development framework designed for large-context AI Agents (Gemini, Claude, GPT-4) and human teams. It enforces a strict workflow of Planning -> Designing -> Execution to minimize errors and maximize scalability.
 
+## Prerequisites
+- **Node.js**: v14+
+- **Python**: v3.x (Required for JSON processing and AI logic)
+- **Git Bash** (Windows only): Required for running the shell scripts.
+
 ## Installation
 
 ### Via NPM (Recommended)

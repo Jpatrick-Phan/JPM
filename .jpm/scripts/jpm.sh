@@ -91,6 +91,9 @@ case "$1" in
         
         # Create local project structure
         mkdir -p "$PROJECT_JPM"/{context,storage/{prds,epics,tasks}}
+
+        # Secure config.env
+        echo "config.env" > "$PROJECT_JPM/.gitignore"
         
         # Create project-map.json if not exists
         if [ ! -f "$PROJECT_CONTEXT/project-map.json" ]; then
