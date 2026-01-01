@@ -21,13 +21,11 @@ TEMPLATE_DIR="$JPM_HOME/templates"
 CORE_DIR="$JPM_HOME/core"
 SCRIPTS_DIR="$JPM_HOME/scripts"
 
-# Detect Python command
-if command -v python3 &> /dev/null; then
-    PYTHON_CMD="python3"
-elif command -v python &> /dev/null; then
-    PYTHON_CMD="python"
+# Detect Node.js command
+if command -v node &> /dev/null; then
+    NODE_CMD="node"
 else
-    PYTHON_CMD=""
+    NODE_CMD=""
 fi
 
 function show_help {
@@ -58,26 +56,25 @@ function update_project_map {
     local feature="$1"
     local map_file="$PROJECT_CONTEXT/project-map.json"
     
-    if [ -z "$PYTHON_CMD" ]; then return; fi
+    if [ -z "$NODE_CMD" ]; then return; fi
     
     if [ -f "$map_file" ]; then
-        # Use Python to safely update JSON
-        "$PYTHON_CMD" -c "
-import sys, json, os
-try:
-    with open('$map_file', 'r') as f:
-        data = json.load(f)
-    
-    if 'features' not in data:
-        data['features'] = []
-        
-    if '$feature' not in data['features']:
-        data['features'].append('$feature')
-        with open('$map_file', 'w') as f:
-            json.dump(data, f, indent=2)
-        print('Updated project-map.json with feature: $feature')
-except Exception as e:
-    print(f'Warning: Could not update project-map.json: {e}')
+        # Use Node to safely update JSON
+        "$NODE_CMD" -e "
+const fs = require('fs');
+const mapFile = '$map_file';
+const feature = '$feature';
+try {
+    const data = JSON.parse(fs.readFileSync(mapFile, 'utf-8'));
+    if (!data.features) data.features = [];
+    if (!data.features.includes(feature)) {
+        data.features.push(feature);
+        fs.writeFileSync(mapFile, JSON.stringify(data, null, 2));
+        console.log('Updated project-map.json with feature: ' + feature);
+    }
+} catch (e) {
+    console.log('Warning: Could not update project-map.json: ' + e.message);
+}
 "
     fi
 }
@@ -94,6 +91,20 @@ case "$1" in
 
         # Secure config.env
         echo "config.env" > "$PROJECT_JPM/.gitignore"
+
+        # Add .jpm to project root .gitignore
+        if [ -f ".gitignore" ]; then
+            if ! grep -q ".jpm/" ".gitignore"; then
+                echo "" >> ".gitignore"
+                echo "# JPM Project Files" >> ".gitignore"
+                echo ".jpm/" >> ".gitignore"
+                echo "Added .jpm/ to .gitignore"
+            fi
+        else
+            echo "# JPM Project Files" > ".gitignore"
+            echo ".jpm/" >> ".gitignore"
+            echo "Created .gitignore with .jpm/"
+        fi
         
         # Create project-map.json if not exists
         if [ ! -f "$PROJECT_CONTEXT/project-map.json" ]; then
@@ -216,41 +227,52 @@ case "$1" in
         JSON_OUTPUT=$(bash "$SCRIPTS_DIR/ai.sh" generate "$TEMP_PROMPT")
         rm "$TEMP_PROMPT"
         
-        # Parse JSON and create files using Python
-        if [ -n "$PYTHON_CMD" ]; then
-            echo "$JSON_OUTPUT" | "$PYTHON_CMD" -c "
-import sys, json, os
+        # Parse JSON and create files using Node
+        if [ -n "$NODE_CMD" ]; then
+            echo "$JSON_OUTPUT" | "$NODE_CMD" -e "
+const fs = require('fs');
+const path = require('path');
+const outputDir = '$PROJECT_STORAGE/tasks';
 
-try:
-    raw_input = sys.stdin.read()
-    # Try to find JSON array in the output (in case of extra text)
-    start_idx = raw_input.find('[')
-    end_idx = raw_input.rfind(']') + 1
-    
-    if start_idx != -1 and end_idx != -1:
-        json_str = raw_input[start_idx:end_idx]
-        tasks = json.loads(json_str)
-        
-        output_dir = '$PROJECT_STORAGE/tasks'
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-            
-        for task in tasks:
-            filename = task.get('filename')
-            content = task.get('content')
-            if filename and content:
-                filepath = os.path.join(output_dir, filename)
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    f.write(content)
-                print(f'Created task: {filepath}')
-    else:
-        print('Error: No JSON array found in AI response.')
-        print('Raw Output:', raw_input[:200] + '...')
-except Exception as e:
-    print(f'Error parsing tasks: {e}')
+try {
+    const rawInput = fs.readFileSync(0, 'utf-8');
+    const startIdx = rawInput.indexOf('[');
+    const endIdx = rawInput.lastIndexOf(']') + 1;
+
+    if (startIdx !== -1 && endIdx !== -1) {
+        const jsonStr = rawInput.substring(startIdx, endIdx);
+        let tasks;
+        try {
+            tasks = JSON.parse(jsonStr);
+        } catch (parseError) {
+            console.error('Error: Failed to parse extracted JSON string.');
+            console.error('Extracted String:', jsonStr);
+            process.exit(1);
+        }
+
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        tasks.forEach(task => {
+            if (task.filename && task.content) {
+                const filepath = path.join(outputDir, task.filename);
+                fs.writeFileSync(filepath, task.content, 'utf-8');
+                console.log('Created task: ' + filepath);
+            }
+        });
+    } else {
+        console.error('Error: No JSON array found in AI response.');
+        console.error('Raw Output (First 500 chars):', rawInput.substring(0, 500) + '...');
+        process.exit(1);
+    }
+} catch (e) {
+    console.error('Error processing tasks: ' + e.message);
+    process.exit(1);
+}
 "
         else
-            echo "Error: Python not found. Cannot parse AI response."
+            echo "Error: Node.js not found. Cannot parse AI response."
         fi
         ;;
     sync)

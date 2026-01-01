@@ -32,13 +32,19 @@ case "$1" in
         # Note: We use the file content as the body. 
         # In a real scenario we might want to strip metadata or add a footer.
         URL=$(gh issue create --title "$TITLE" --body-file "$FILE_PATH" --label "jpm-task")
+        GH_EXIT=$?
         
-        echo "Created Issue: $URL"
-        
-        # Append Issue URL to file as metadata if not present
-        if ! grep -q "GitHub Issue:" "$FILE_PATH"; then
-            echo "" >> "$FILE_PATH"
-            echo "<!-- GitHub Issue: $URL -->" >> "$FILE_PATH"
+        if [ $GH_EXIT -eq 0 ] && [ -n "$URL" ]; then
+            echo "Created Issue: $URL"
+            
+            # Append Issue URL to file as metadata if not present
+            if ! grep -q "GitHub Issue:" "$FILE_PATH"; then
+                echo "" >> "$FILE_PATH"
+                echo "<!-- GitHub Issue: $URL -->" >> "$FILE_PATH"
+            fi
+        else
+            echo "Error: Failed to create GitHub issue for $FILE_PATH (Exit code: $GH_EXIT)"
+            echo "Output: $URL"
         fi
         ;;
     update-issue)
