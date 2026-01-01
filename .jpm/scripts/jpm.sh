@@ -38,6 +38,7 @@ function show_help {
     echo "  jpm split [feature]  Create Task drafts"
     echo "  jpm sync             Sync local tasks to GitHub"
     echo "  jpm run [task_id]    Prepare execution context"
+    echo "  jpm status           Show project status and features"
     echo "  jpm issue [cmd]      Manage issues (list, close)"
     echo "  jpm config [k] [v]   Set configuration (provider, api_key)"
     echo "  jpm gen [in] [out]   Generate content using AI"
@@ -54,6 +55,10 @@ function check_init {
 
 function update_project_map {
     local feature="$1"
+    local status="$2"
+    local prd_path="$3"
+    local arch_path="$4"
+    local task_count="$5"
     local map_file="$PROJECT_CONTEXT/project-map.json"
     
     if [ -z "$NODE_CMD" ]; then return; fi
@@ -64,14 +69,39 @@ function update_project_map {
 const fs = require('fs');
 const mapFile = '$map_file';
 const feature = '$feature';
+const status = '$status';
+const prdPath = '$prd_path';
+const archPath = '$arch_path';
+const taskCount = '$task_count';
+
 try {
     const data = JSON.parse(fs.readFileSync(mapFile, 'utf-8'));
-    if (!data.features) data.features = [];
-    if (!data.features.includes(feature)) {
-        data.features.push(feature);
-        fs.writeFileSync(mapFile, JSON.stringify(data, null, 2));
-        console.log('Updated project-map.json with feature: ' + feature);
+    
+    // Migrate old array structure to object if needed
+    if (Array.isArray(data.features)) {
+        const oldFeatures = data.features;
+        data.features = {};
+        oldFeatures.forEach(f => {
+            data.features[f] = { status: 'unknown' };
+        });
     }
+    
+    if (!data.features) data.features = {};
+    
+    if (!data.features[feature]) {
+        data.features[feature] = {};
+    }
+    
+    // Update fields
+    if (status) data.features[feature].status = status;
+    if (prdPath) data.features[feature].prd_path = prdPath;
+    if (archPath) data.features[feature].arch_path = archPath;
+    if (taskCount) data.features[feature].tasks_count = parseInt(taskCount);
+    
+    data.features[feature].last_updated = new Date().toISOString();
+
+    fs.writeFileSync(mapFile, JSON.stringify(data, null, 2));
+    console.log('Updated project-map.json for feature: ' + feature);
 } catch (e) {
     console.log('Warning: Could not update project-map.json: ' + e.message);
 }
@@ -91,6 +121,7 @@ case "$1" in
 
         # Secure config.env
         echo "config.env" > "$PROJECT_JPM/.gitignore"
+        chmod 600 "$PROJECT_JPM/.gitignore" 2>/dev/null # Try to secure it, might fail on Windows/FS but good practice
 
         # Add .jpm to project root .gitignore
         if [ -f ".gitignore" ]; then
@@ -108,7 +139,7 @@ case "$1" in
         
         # Create project-map.json if not exists
         if [ ! -f "$PROJECT_CONTEXT/project-map.json" ]; then
-            echo "{ \"project\": \"$(basename "$PWD")\", \"version\": \"0.1.0\", \"features\": [] }" > "$PROJECT_CONTEXT/project-map.json"
+            echo "{ \"project\": \"$(basename "$PWD")\", \"version\": \"0.1.0\", \"features\": {} }" > "$PROJECT_CONTEXT/project-map.json"
             echo "Created $PROJECT_CONTEXT/project-map.json"
         fi
 
@@ -137,6 +168,9 @@ case "$1" in
         if [ -f "$TEMPLATE_DIR/PRD_TEMPLATE.md" ]; then
             cp "$TEMPLATE_DIR/PRD_TEMPLATE.md" "$TARGET"
             
+            # Replace Placeholders
+            sed -i "s/\[Feature Name\]/$FEATURE/g" "$TARGET"
+
             if [ -n "$REQUIREMENTS" ]; then
                 echo "Generating PRD content with AI based on requirements..."
                 TEMP_PROMPT=$(mktemp)
@@ -153,7 +187,7 @@ case "$1" in
             fi
             
             # Update Project Map
-            update_project_map "$FEATURE"
+            update_project_map "$FEATURE" "planned" "$TARGET" "" ""
         else
             echo "Error: Template not found at $TEMPLATE_DIR/PRD_TEMPLATE.md"
             exit 1
@@ -172,6 +206,9 @@ case "$1" in
         # Copy from Global Template
         if [ -f "$TEMPLATE_DIR/ARCHITECT_TEMPLATE.md" ]; then
             cp "$TEMPLATE_DIR/ARCHITECT_TEMPLATE.md" "$TARGET"
+            
+            # Replace Placeholders
+            sed -i "s/\[Feature Name\]/$FEATURE/g" "$TARGET"
             
             if [ -f "$PRD_SOURCE" ]; then
                  echo "Found PRD: $PRD_SOURCE"
@@ -193,7 +230,7 @@ case "$1" in
             fi
             
             # Update Project Map
-            update_project_map "$FEATURE"
+            update_project_map "$FEATURE" "designed" "" "$TARGET" ""
         else
              echo "Error: Template not found at $TEMPLATE_DIR/ARCHITECT_TEMPLATE.md"
              exit 1
@@ -229,10 +266,12 @@ case "$1" in
         
         # Parse JSON and create files using Node
         if [ -n "$NODE_CMD" ]; then
-            echo "$JSON_OUTPUT" | "$NODE_CMD" -e "
+            # Capture the output of the node script to get the task count
+            TASK_COUNT=$(echo "$JSON_OUTPUT" | "$NODE_CMD" -e "
 const fs = require('fs');
 const path = require('path');
 const outputDir = '$PROJECT_STORAGE/tasks';
+const feature = '$FEATURE';
 
 try {
     const rawInput = fs.readFileSync(0, 'utf-8');
@@ -246,7 +285,6 @@ try {
             tasks = JSON.parse(jsonStr);
         } catch (parseError) {
             console.error('Error: Failed to parse extracted JSON string.');
-            console.error('Extracted String:', jsonStr);
             process.exit(1);
         }
 
@@ -257,20 +295,32 @@ try {
         tasks.forEach(task => {
             if (task.filename && task.content) {
                 const filepath = path.join(outputDir, task.filename);
-                fs.writeFileSync(filepath, task.content, 'utf-8');
-                console.log('Created task: ' + filepath);
+                // Inject Feature Metadata
+                let content = task.content;
+                if (!content.includes('<!-- Feature:')) {
+                    content = '<!-- Feature: ' + feature + ' -->\n' + content;
+                }
+                fs.writeFileSync(filepath, content, 'utf-8');
+                console.error('Created task: ' + filepath); // Log to stderr to not mess up stdout capture
             }
         });
+        console.log(tasks.length); // Output task count to stdout
     } else {
         console.error('Error: No JSON array found in AI response.');
-        console.error('Raw Output (First 500 chars):', rawInput.substring(0, 500) + '...');
         process.exit(1);
     }
 } catch (e) {
     console.error('Error processing tasks: ' + e.message);
     process.exit(1);
 }
-"
+")
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 0 ]; then
+                echo "Successfully created $TASK_COUNT tasks."
+                update_project_map "$FEATURE" "split" "" "" "$TASK_COUNT"
+            else
+                echo "Task splitting failed."
+            fi
         else
             echo "Error: Node.js not found. Cannot parse AI response."
         fi
@@ -301,9 +351,48 @@ try {
         TASK_FILE=$(find "$PROJECT_STORAGE/tasks" -name "*$TASK_ID*.md" | head -n 1)
         
         if [ -z "$TASK_FILE" ]; then echo "Task not found with ID: $TASK_ID"; exit 1; fi
+        
         echo "---------------------------------------------------"
         echo "EXECUTING TASK: $TASK_FILE"
         echo "---------------------------------------------------"
+        
+        # Try to extract Feature Name from metadata
+        FEATURE_NAME=$(grep "<!-- Feature:" "$TASK_FILE" | sed 's/<!-- Feature: //; s/ -->//')
+        
+        if [ -n "$FEATURE_NAME" ]; then
+            echo "Feature Detected: $FEATURE_NAME"
+            
+            # Look up paths in project-map.json using Node
+            if [ -n "$NODE_CMD" ]; then
+                PATHS=$("$NODE_CMD" -e "
+                    try {
+                        const data = JSON.parse(require('fs').readFileSync('$PROJECT_CONTEXT/project-map.json', 'utf-8'));
+                        const f = data.features['$FEATURE_NAME'];
+                        if (f) {
+                            console.log(f.prd_path + '|' + f.arch_path);
+                        }
+                    } catch(e) {}
+                ")
+                
+                IFS='|' read -r PRD_PATH ARCH_PATH <<< "$PATHS"
+                
+                if [ -f "$PRD_PATH" ]; then
+                    echo "--- PRD CONTEXT ($PRD_PATH) ---"
+                    cat "$PRD_PATH"
+                    echo ""
+                fi
+                
+                if [ -f "$ARCH_PATH" ]; then
+                    echo "--- ARCHITECTURE CONTEXT ($ARCH_PATH) ---"
+                    cat "$ARCH_PATH"
+                    echo ""
+                fi
+            fi
+        else
+            echo "Warning: No feature metadata found in task file. Context might be incomplete."
+        fi
+        
+        echo "--- TASK CONTENT ---"
         cat "$TASK_FILE"
         echo "---------------------------------------------------"
         echo "Copy the content above and paste it to AI."
@@ -330,10 +419,77 @@ try {
             exit 1
         fi
         
-        # Simple append/update logic (for now just append)
-        # In real world, use sed to replace if exists
-        echo "export $KEY=\"$VALUE\"" >> "$CONFIG_FILE"
-        echo "Set $KEY=$VALUE in $CONFIG_FILE"
+        # Use Node to cleanly update config file
+        if [ -n "$NODE_CMD" ]; then
+            "$NODE_CMD" -e "
+const fs = require('fs');
+const configFile = '$CONFIG_FILE';
+const key = '$KEY';
+const value = '$VALUE';
+
+try {
+    let content = '';
+    if (fs.existsSync(configFile)) {
+        content = fs.readFileSync(configFile, 'utf-8');
+    }
+    
+    const lines = content.split('\n').filter(line => line.trim() !== '');
+    let found = false;
+    const newLines = lines.map(line => {
+        if (line.startsWith('export ' + key + '=')) {
+            found = true;
+            return 'export ' + key + '=\"' + value + '\"';
+        }
+        return line;
+    });
+    
+    if (!found) {
+        newLines.push('export ' + key + '=\"' + value + '\"');
+    }
+    
+    fs.writeFileSync(configFile, newLines.join('\n') + '\n');
+    console.log('Set ' + key + ' in ' + configFile);
+} catch (e) {
+    console.error('Error updating config: ' + e.message);
+    process.exit(1);
+}
+"
+        else
+            # Fallback to append if Node is missing (shouldn't happen given check_init)
+            echo "export $KEY=\"$VALUE\"" >> "$CONFIG_FILE"
+            echo "Set $KEY=$VALUE in $CONFIG_FILE"
+        fi
+        ;;
+    status)
+        check_init
+        if [ -n "$NODE_CMD" ]; then
+            "$NODE_CMD" -e "
+const fs = require('fs');
+const mapFile = '$PROJECT_CONTEXT/project-map.json';
+try {
+    const data = JSON.parse(fs.readFileSync(mapFile, 'utf-8'));
+    console.log('Project: ' + data.project);
+    console.log('Version: ' + data.version);
+    console.log('');
+    console.log('Features:');
+    console.log(String('Name').padEnd(20) + String('Status').padEnd(15) + String('Tasks').padEnd(10) + 'Last Updated');
+    console.log('-'.repeat(65));
+    
+    const features = data.features || {};
+    Object.keys(features).forEach(name => {
+        const f = features[name];
+        const status = f.status || 'unknown';
+        const tasks = f.tasks_count || 0;
+        const updated = f.last_updated ? new Date(f.last_updated).toLocaleDateString() : 'N/A';
+        console.log(name.padEnd(20) + status.padEnd(15) + String(tasks).padEnd(10) + updated);
+    });
+} catch (e) {
+    console.error('Error reading status: ' + e.message);
+}
+"
+        else
+            echo "Error: Node.js required for status command."
+        fi
         ;;
     gen)
         check_init
