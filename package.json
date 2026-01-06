@@ -3,11 +3,13 @@
   "version": "1.0.1",
   "description": "Jatrick Project Manager (JPM) - Spec-Driven Development CLI for AI Agents",
   "bin": {
-    "jpm": "./bin/jpm.js"
+    "jpm": "./dist/src/index.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "node scripts/postinstall.js"
+    "build": "tsc",
+    "start": "node dist/src/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest"
   },
   "keywords": [
     "cli",
@@ -25,8 +27,28 @@
     "url": "https://github.com/Jpatrick-Phan/JPM.git"
   },
   "files": [
-    "bin",
-    ".jpm",
-    "scripts"
-  ]
+    "dist",
+    "README.md"
+  ],
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "boxen": "^5.1.2",
+    "chalk": "^4.1.2",
+    "dotenv": "^17.2.3",
+    "ignore": "^7.0.5",
+    "inquirer": "^8.2.7",
+    "ora": "^5.4.1",
+    "p-retry": "^4.6.2",
+    "winston": "^3.19.0",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.9",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.0.3",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
 }

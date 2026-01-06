@@ -1,4 +1,6 @@
 node_modules/
 .DS_Store
 .env
-.jpm/config.env
+.jpm/
+.jpm_backups/
+.jpm_cache/

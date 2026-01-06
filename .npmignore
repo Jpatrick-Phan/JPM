@@ -1,0 +1,22 @@
+# Source
+src/
+test/
+.env
+.tsconfig.json
+.eslintrc.json
+jest.config.js
+.jpm/
+.jpm_backups/
+.jpm_cache/
+test_project_v3/
+test_v4/
+debug-ai.ts
+list-models.ts
+
+# Editor
+.vscode/
+.idea/
+
+# Distribution
+node_modules/
+# Keep dist/

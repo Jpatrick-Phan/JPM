@@ -1,91 +1,106 @@
-# JPM: Jatrick Project Manager (Phiên bản Tiếng Việt)
+# JPM-CLI: Just Project Manager 🚀
 
-**JPM** là một framework phát triển phần mềm dựa trên đặc tả (Spec-Driven Development), được thiết kế tối ưu cho việc phối hợp giữa con người và các AI Agent có ngữ cảnh lớn (như Gemini 1.5 Pro, Claude 3 Opus, GPT-4).
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-JPM áp dụng quy trình nghiêm ngặt: **Plan (Lập kế hoạch) -> Design (Thiết kế) -> Execute (Thực thi)** để đảm bảo mọi dòng code được viết ra đều đã được suy nghĩ kỹ lưỡng.
+**JPM (Jatrick Project Manager)** là một công cụ dòng lệnh (CLI) phục vụ phát triển phần mềm theo định hướng đặc tả (Spec-Driven Development), được thiết kế để tối ưu hóa quy trình làm việc giữa AI Agents và Lập trình viên. Nó áp dụng quy trình nghiêm ngặt "Lập kế hoạch → Thiết kế → Chia nhỏ → Đồng bộ" để đảm bảo chất lượng mã nguồn và sự nhất quán của dự án.
 
-## Cài Đặt
+---
 
-### Cách 1: Cài qua NPM (Khuyên dùng)
-Bạn có thể cài đặt JPM như một công cụ toàn cục (Global Tool) trên máy tính của mình.
+## 🌟 Tại sao nên chọn JPM?
+
+- **🧠 Định hướng Đặc tả**: Không còn cảnh code "đại". Mọi tính năng đều bắt buộc phải có PRD và Tài liệu Kiến trúc.
+- **⚡ Sức mạnh AI**: Sử dụng Google Gemini để tạo ra các đặc tả chất lượng cao và chia nhỏ công việc một cách thông minh.
+- **🤝 Đồng bộ GitHub**: Tự động chia nhỏ các tính năng lớn thành "Parent Issues" kèm theo danh sách công việc (Tasklists) có thể theo dõi được.
+- **🛡️ Tuân thủ Quy tắc Master**: Bắt buộc AI tuân thủ các quy tắc dự án (Tech Stack, Cách đặt tên, Thiết kế) được định nghĩa trong `JPM_MASTER.md`.
+
+---
+
+## 📦 Cài đặt
+
+Cài đặt toàn cục (Global) thông qua NPM:
 
 ```bash
 npm install -g jpm-cli
 ```
 
-### Cách 2: Cài thủ công
-1. Clone repository này về máy: `git clone https://github.com/jatrick/jpm.git ~/.jpm-core`
-2. Thêm vào PATH:
-   - **Mac/Linux**: Thêm `export PATH="$HOME/.jpm-core/.jpm/scripts:$PATH"` vào `.bashrc` hoặc `.zshrc`.
-   - **Windows**: Thêm đường dẫn `C:\Users\YourName\.jpm-core\.jpm\scripts` vào biến môi trường PATH.
+### Cấu hình (Quan trọng!)
 
-## Hướng Dẫn Sử Dụng
+JPM yêu cầu Google Gemini API Key để hoạt động. Bạn có thể thiết lập dễ dàng như sau:
 
-### 1. Khởi tạo dự án (Init)
-Đi đến thư mục dự án của bạn và chạy lệnh:
+1.  Chạy lệnh cấu hình:
+    ```bash
+    jpm config
+    ```
+    *(Lệnh này sẽ mở thư mục cài đặt gốc của jpm-cli)*
+2.  Tạo hoặc nhân bản file `.env` trong thư mục đó.
+3.  Thêm key của bạn vào:
+    ```env
+    JPM_API_KEY=your_gemini_api_key_here
+    ```
+
+---
+
+## 🚀 Quy trình "Zero to Hero"
+
+### 1. Khởi tạo Dự án
+Đi đến thư mục dự án của bạn và đánh thức JPM.
 
 ```bash
+mkdir my-super-app
+cd my-super-app
 jpm init
 ```
-Lệnh này sẽ tạo thư mục `.jpm/` trong dự án để lưu trữ các tài liệu đặc tả (PRD, Architecture, Tasks).
+*Lệnh này tạo cấu trúc `.jpm/` và file `JPM_MASTER.md`. Hãy sửa `JPM_MASTER.md` để định nghĩa Tech Stack của bạn!*
 
-### 2. Cấu hình AI (Config)
-Để sử dụng tính năng tạo nội dung tự động (`jpm gen`), bạn cần cấu hình API Key.
+### 2. Lập kế hoạch (The "What")
+Tạo Tài liệu Yêu cầu Sản phẩm (PRD).
 
-**Ví dụ với Gemini:**
 ```bash
-jpm config JPM_AI_PROVIDER gemini
-jpm config JPM_GEMINI_API_KEY "AIzaSy...Của_Bạn"
+jpm plan "Xác thực người dùng"
 ```
 
-**Các Provider hỗ trợ:** `gemini`, `openai`, `claude`.
+### 3. Thiết kế Hệ thống (The "How")
+Tạo kiến trúc kỹ thuật dựa trên PRD đã có.
 
-### 3. Quy trình làm việc (Workflow)
-
-JPM hỗ trợ quy trình "Human-in-the-loop" (Con người tham gia vào vòng lặp), cho phép bạn chỉnh sửa kết quả của AI ở bất kỳ bước nào.
-
-**Bước 1: Lập kế hoạch (Plan)**
-Bạn có thể yêu cầu AI tạo bản nháp PRD ngay từ đầu bằng cách cung cấp mô tả ngắn gọn.
 ```bash
-jpm plan authentication "Người dùng có thể đăng nhập bằng Google và Email/Password"
-```
-*Kết quả: AI sẽ điền vào template PRD tại `.jpm/storage/prds/prd-authentication.md`.*
-
-> **Lưu ý:** Sau bước này, bạn nên mở file PRD ra để chỉnh sửa, bổ sung các yêu cầu chi tiết mà AI có thể đã bỏ sót.
-
-**Bước 2: Thiết kế (Design)**
-Sau khi đã chốt nội dung PRD, hãy yêu cầu AI thiết kế kiến trúc hệ thống.
-```bash
-jpm design authentication
-```
-*Kết quả: JPM sẽ tự động tìm file PRD tương ứng và yêu cầu AI tạo tài liệu Architecture tại `.jpm/storage/epics/arch-authentication.md`.*
-
-> **Lưu ý:** Tương tự, hãy review và chỉnh sửa file Architecture trước khi sang bước tiếp theo.
-
-**Bước 3: Chia nhỏ công việc (Split)**
-Chuẩn bị chia nhỏ Architecture thành các Task lập trình cụ thể.
-```bash
-jpm split authentication
+jpm design "Xác thực người dùng"
 ```
 
-**Bước 4: Đồng bộ GitHub (Sync)**
-Đẩy các Task đã tạo lên GitHub Issues để quản lý tiến độ.
+### 4. Chia nhỏ Công việc (The "Steps")
+Chia nhỏ kiến trúc thành các task nhỏ, cụ thể, sẵn sàng để code.
+
+```bash
+jpm split "Xác thực người dùng"
+```
+
+### 5. Đồng bộ lên GitHub (The "Management")
+Đẩy các task lên GitHub Issues (yêu cầu đã cài `gh` CLI).
+
 ```bash
 jpm sync
 ```
 
-**Bước 5: Thực thi (Run)**
-Lấy ngữ cảnh của một Task để đưa cho AI Agent (như Gemini Advanced, ChatGPT) thực hiện code.
+---
+
+## 🧹 Bảo trì
+
+Dọn dẹp cache và các file backup để tiết kiệm dung lượng:
+
 ```bash
-jpm run task-001
+jpm clean
 ```
 
-## Cấu Trúc Thư Mục
-- **Global (`JPM_HOME`)**: Nơi cài đặt JPM, chứa các template mẫu và script lõi.
-- **Local (`.jpm/`)**: Nằm trong mỗi dự án của bạn.
-  - `storage/`: Chứa toàn bộ tài liệu dự án (PRDs, Epics, Tasks).
-  - `context/`: Chứa `project-map.json` (bản đồ dự án).
+---
 
-## Triết Lý
-- **No Spec, No Code**: Không bao giờ code khi chưa có kế hoạch.
-- **Context is King**: AI cần ngữ cảnh đầy đủ để làm việc hiệu quả. JPM giúp bạn quản lý ngữ cảnh đó.
+## 🛠️ Công nghệ sử dụng
+
+- **Runtime**: Node.js
+- **Ngôn ngữ**: TypeScript
+- **AI**: Google Gemini (via `@google/generative-ai`)
+- **Công cụ CLI**: `inquirer`, `ora`, `boxen`, `commander`
+
+---
+
+Được làm với ❤️ bởi Jatrick
