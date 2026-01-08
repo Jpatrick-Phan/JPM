@@ -1,6 +1,6 @@
 {
   "name": "jpm-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Jatrick Project Manager (JPM) - Spec-Driven Development CLI for AI Agents",
   "bin": {
     "jpm": "./dist/src/index.js"
