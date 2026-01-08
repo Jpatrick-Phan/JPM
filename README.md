@@ -105,4 +105,37 @@ jpm clean
 
 ---
 
+## 👨‍💻 Development
+
+If you want to contribute to JPM or modify it locally:
+
+1.  **Clone & Install**:
+    ```bash
+    git clone https://github.com/Jpatrick-Phan/JPM.git
+    cd JPM
+    npm install
+    ```
+
+2.  **Linting & Formatting**:
+    We use ESLint and Prettier. Run this before committing:
+    ```bash
+    npm run lint      # Check for issues
+    npm run lint -- --fix # Auto-fix issues
+    ```
+
+3.  **Testing**:
+    Run the test suite (Core + CLI Integration):
+    ```bash
+    npm test
+    ```
+
+4.  **Local Build**:
+    ```bash
+    npm run build
+    # Test your local build:
+    node dist/src/index.js -h
+    ```
+
+---
+
 Made with ❤️ by Jatrick

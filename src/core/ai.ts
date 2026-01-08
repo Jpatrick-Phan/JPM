@@ -14,7 +14,7 @@ export class AIClient {
 
     constructor() {
         if (!config.JPM_API_KEY) {
-            logger.warn("JPM_API_KEY is not set. AI features will fail.");
+            logger.warn('JPM_API_KEY is not set. AI features will fail.');
         }
         this.genAI = new GoogleGenerativeAI(config.JPM_API_KEY || '');
         this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -42,10 +42,10 @@ export class AIClient {
                     retries: config.JPM_MAX_RETRIES,
                     onFailedAttempt: (error) => {
                         logger.warn(
-                            `Attempt ${error.attemptNumber} failed. There are ${error.retriesLeft} retries left.`
+                            `Attempt ${error.attemptNumber} failed. There are ${error.retriesLeft} retries left.`,
                         );
                     },
-                }
+                },
             );
         });
     }
@@ -54,7 +54,7 @@ export class AIClient {
      * Handles streaming response
      */
     async *streamContent(prompt: string): AsyncGenerator<string, void, unknown> {
-        // Note: Streaming is harder to seamlessly retry mid-stream, 
+        // Note: Streaming is harder to seamlessly retry mid-stream,
         // so we usually retry the initial connection.
         try {
             await this.enforceRateLimit();
@@ -97,7 +97,7 @@ export class AIClient {
 
         if (timeSinceLastCall < this.rateLevel) {
             const waitTime = this.rateLevel - timeSinceLastCall;
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
         }
         this.lastCallTime = Date.now();
     }

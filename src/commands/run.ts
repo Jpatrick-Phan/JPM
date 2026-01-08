@@ -8,7 +8,7 @@ export async function commandRun() {
     // List tasks
     const tasksDir = '.jpm/storage/tasks';
     const files = await fs.readdir(tasksDir);
-    const taskFiles = files.filter(f => f.startsWith('task-') && f.endsWith('.md'));
+    const taskFiles = files.filter((f) => f.startsWith('task-') && f.endsWith('.md'));
 
     if (taskFiles.length === 0) {
         cli.showError('No Tasks', 'No tasks found. Run `jpm split` first.');
@@ -20,11 +20,13 @@ export async function commandRun() {
     // Simulate parallel execution
     cli.startSpinner(`Executing ${taskFiles.length} tasks in parallel...`);
 
-    const results = await Promise.all(taskFiles.map(async (file) => {
-        await new Promise(r => setTimeout(r, 2000)); // Simulate work
-        return `Completed ${file}`;
-    }));
+    const results = await Promise.all(
+        taskFiles.map(async (file) => {
+            await new Promise((r) => setTimeout(r, 2000)); // Simulate work
+            return `Completed ${file}`;
+        }),
+    );
 
     cli.stopSpinner(true, 'All tasks completed!');
-    results.forEach(r => console.log(`✓ ${r}`));
+    results.forEach((r) => console.log(`✓ ${r}`));
 }

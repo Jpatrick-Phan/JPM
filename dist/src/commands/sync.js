@@ -31,7 +31,7 @@ async function commandSync() {
     const tasksDir = path_1.default.join(process.cwd(), '.jpm/storage/tasks');
     try {
         const files = await promises_1.default.readdir(tasksDir);
-        const taskFiles = files.filter(f => f.startsWith('task-') && f.endsWith('.md'));
+        const taskFiles = files.filter((f) => f.startsWith('task-') && f.endsWith('.md'));
         if (taskFiles.length === 0) {
             ui_1.cli.showError('No Tasks', 'No tasks found to sync.');
             return;

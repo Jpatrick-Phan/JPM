@@ -10,7 +10,10 @@ export async function commandPlan(args: string[]) {
     const featureName = args.join(' ');
 
     if (!featureName) {
-        cli.showError('Missing Argument', 'Please provide a feature name (e.g., "jpm plan User Auth")');
+        cli.showError(
+            'Missing Argument',
+            'Please provide a feature name (e.g., "jpm plan User Auth")',
+        );
         return;
     }
 
@@ -39,7 +42,6 @@ export async function commandPlan(args: string[]) {
         console.log(''); // newline
         cli.showInfo('Artifact Saved', path.relative(rootDir, filePath));
         console.log('Use `jpm design <feature-name>` to proceed to Architecture.');
-
     } catch (error: any) {
         cli.stopSpinner(false, 'Planning failed');
         throw error;

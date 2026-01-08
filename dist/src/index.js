@@ -46,20 +46,42 @@ const path_1 = __importDefault(require("path"));
 const promises_1 = __importDefault(require("fs/promises"));
 async function main() {
     const args = process.argv.slice(2);
+    if (args.includes('--version') || args.includes('-v')) {
+        try {
+            const pkgPath = __dirname.includes('dist')
+                ? path_1.default.join(__dirname, '../../package.json')
+                : path_1.default.join(__dirname, '../package.json');
+            const pkg = JSON.parse(await promises_1.default.readFile(pkgPath, 'utf-8'));
+            console.log(`v${pkg.version}`);
+        }
+        catch (e) {
+            console.log('Version unavailable');
+        }
+        return;
+    }
+    if (args.includes('--help') || args.includes('-h')) {
+        ui_1.cli.showInfo('JPM', 'Jatrick Project Manager - TypeScript Edition');
+        console.log('Usage: jpm <command> [args]');
+        console.log('Options:');
+        console.log('  -v, --version   Show version');
+        console.log('  -h, --help      Show help');
+        console.log('Commands:');
+        console.log('  init            Initialize JPM');
+        console.log('  config          Configure API Key');
+        console.log('  plan <feature>  Create a PRD');
+        console.log('  design <feat>   Create Architecture');
+        console.log('  split <feat>    Decompose to Tasks');
+        console.log('  run             Execute tasks');
+        console.log('  sync            Sync to GitHub');
+        console.log('  clean           Clean cache');
+        console.log('  ask <prompt>    Chat with AI');
+        return;
+    }
     const command = args[0];
     try {
         if (!command) {
-            ui_1.cli.showInfo('JPM', 'Jatrick Project Manager - TypeScript Edition');
             console.log('Usage: jpm <command> [args]');
-            console.log('Commands:');
-            console.log('  plan <feature>  Create a PRD');
-            console.log('  design <feat>   Create Architecture');
-            console.log('  split <feat>    Decompose to Tasks');
-            console.log('  ask <prompt>    Chat with AI');
-            console.log('  sync            Sync to GitHub');
-            console.log('  run             Execute tasks');
-            console.log('  clean           Clean cache and backups');
-            console.log('  init            Initialize JPM');
+            console.log('Try "jpm --help" for details.');
             return;
         }
         if (command === 'ask') {

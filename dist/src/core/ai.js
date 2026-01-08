@@ -18,7 +18,7 @@ class AIClient {
     rateLevel = 1000; // ms minimum between calls (simple rate limit)
     constructor() {
         if (!env_1.config.JPM_API_KEY) {
-            logger_1.logger.warn("JPM_API_KEY is not set. AI features will fail.");
+            logger_1.logger.warn('JPM_API_KEY is not set. AI features will fail.');
         }
         this.genAI = new generative_ai_1.GoogleGenerativeAI(env_1.config.JPM_API_KEY || '');
         this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -52,7 +52,7 @@ class AIClient {
      * Handles streaming response
      */
     async *streamContent(prompt) {
-        // Note: Streaming is harder to seamlessly retry mid-stream, 
+        // Note: Streaming is harder to seamlessly retry mid-stream,
         // so we usually retry the initial connection.
         try {
             await this.enforceRateLimit();
@@ -92,7 +92,7 @@ class AIClient {
         const timeSinceLastCall = now - this.lastCallTime;
         if (timeSinceLastCall < this.rateLevel) {
             const waitTime = this.rateLevel - timeSinceLastCall;
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
         }
         this.lastCallTime = Date.now();
     }

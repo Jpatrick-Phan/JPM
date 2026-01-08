@@ -36,7 +36,7 @@ export class CLI {
                 padding: 1,
                 borderColor: 'red',
                 borderStyle: 'round',
-            })
+            }),
         );
     }
 
@@ -48,7 +48,7 @@ export class CLI {
                 padding: 1,
                 borderColor: 'blue',
                 borderStyle: 'round',
-            })
+            }),
         );
     }
 

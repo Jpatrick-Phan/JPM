@@ -8,11 +8,15 @@ describe('JPM Core Tests', () => {
     const testDir = path.join(process.cwd(), 'test-data');
 
     beforeAll(async () => {
-        try { await fs.mkdir(testDir); } catch (e) { }
+        try {
+            await fs.mkdir(testDir);
+        } catch (e) {}
     });
 
     afterAll(async () => {
-        try { await fs.rm(testDir, { recursive: true, force: true }); } catch (e) { }
+        try {
+            await fs.rm(testDir, { recursive: true, force: true });
+        } catch (e) {}
     });
 
     describe('SafeFileSystem', () => {

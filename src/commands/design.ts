@@ -39,11 +39,12 @@ export async function commandDesign(args: string[]) {
 
         cli.showInfo('Artifact Saved', path.relative(rootDir, archPath));
         console.log('Use `jpm split <feature-name>` to break this down into tasks.');
-
     } catch (error: any) {
         cli.stopSpinner(false, 'Design failed');
         if (error.code === 'ENOENT' || error.message.includes('Read failed')) {
-            throw new JPMError(`PRD not found at ${prdPath}. Please run 'jpm plan ${featureName}' first.`);
+            throw new JPMError(
+                `PRD not found at ${prdPath}. Please run 'jpm plan ${featureName}' first.`,
+            );
         }
         throw error;
     }

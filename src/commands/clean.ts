@@ -8,7 +8,9 @@ export async function commandClean() {
     const cacheDir = path.join(rootDir, '.jpm/cache');
     const backupDir = path.join(rootDir, '.jpm/backups');
 
-    const confirmed = await cli.confirm('Are you sure you want to clean cache and backups? This cannot be undone.');
+    const confirmed = await cli.confirm(
+        'Are you sure you want to clean cache and backups? This cannot be undone.',
+    );
     if (!confirmed) {
         console.log('Cancelled.');
         return;
@@ -38,7 +40,6 @@ export async function commandClean() {
         cli.stopSpinner(true, 'Cleanup complete!');
         console.log(' - .jpm/cache cleared');
         console.log(' - .jpm/backups cleared');
-
     } catch (error: any) {
         cli.stopSpinner(false, 'Cleanup failed');
         throw error;

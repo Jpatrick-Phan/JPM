@@ -12,7 +12,10 @@ export async function commandSplit(args: string[]) {
     const cleanName = featureName.toLowerCase().replace(/\s+/g, '-');
 
     if (!featureName) {
-        cli.showError('Missing Argument', 'Please provide a feature name (must match an Architecture)');
+        cli.showError(
+            'Missing Argument',
+            'Please provide a feature name (must match an Architecture)',
+        );
         return;
     }
 
@@ -67,18 +70,22 @@ status: open
 
 ${task.description}
 `;
-            await fileSystem.writeFileSafe(path.join(rootDir, `.jpm/storage/tasks/${taskFilename}`), taskContent);
+            await fileSystem.writeFileSafe(
+                path.join(rootDir, `.jpm/storage/tasks/${taskFilename}`),
+                taskContent,
+            );
             console.log(`- Created ${taskFilename}`);
         }
 
         console.log('');
         cli.showInfo('Success', 'Tasks saved to .jpm/storage/tasks/');
         console.log('Use `jpm run` to execute them.');
-
     } catch (error: any) {
         cli.stopSpinner(false, 'Split failed');
         if (error.code === 'ENOENT' || error.message.includes('Read failed')) {
-            throw new JPMError(`Architecture not found at ${archPath}. Please run 'jpm design ${featureName}' first.`);
+            throw new JPMError(
+                `Architecture not found at ${archPath}. Please run 'jpm design ${featureName}' first.`,
+            );
         }
         throw error;
     }

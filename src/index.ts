@@ -10,21 +10,44 @@ import fs from 'fs/promises';
 
 async function main() {
     const args = process.argv.slice(2);
+    if (args.includes('--version') || args.includes('-v')) {
+        try {
+            const pkgPath = __dirname.includes('dist')
+                ? path.join(__dirname, '../../package.json')
+                : path.join(__dirname, '../package.json');
+            const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'));
+            console.log(`v${pkg.version}`);
+        } catch (e) {
+            console.log('Version unavailable');
+        }
+        return;
+    }
+
+    if (args.includes('--help') || args.includes('-h')) {
+        cli.showInfo('JPM', 'Jatrick Project Manager - TypeScript Edition');
+        console.log('Usage: jpm <command> [args]');
+        console.log('Options:');
+        console.log('  -v, --version   Show version');
+        console.log('  -h, --help      Show help');
+        console.log('Commands:');
+        console.log('  init            Initialize JPM');
+        console.log('  config          Configure API Key');
+        console.log('  plan <feature>  Create a PRD');
+        console.log('  design <feat>   Create Architecture');
+        console.log('  split <feat>    Decompose to Tasks');
+        console.log('  run             Execute tasks');
+        console.log('  sync            Sync to GitHub');
+        console.log('  clean           Clean cache');
+        console.log('  ask <prompt>    Chat with AI');
+        return;
+    }
+
     const command = args[0];
 
     try {
         if (!command) {
-            cli.showInfo('JPM', 'Jatrick Project Manager - TypeScript Edition');
             console.log('Usage: jpm <command> [args]');
-            console.log('Commands:');
-            console.log('  plan <feature>  Create a PRD');
-            console.log('  design <feat>   Create Architecture');
-            console.log('  split <feat>    Decompose to Tasks');
-            console.log('  ask <prompt>    Chat with AI');
-            console.log('  sync            Sync to GitHub');
-            console.log('  run             Execute tasks');
-            console.log('  clean           Clean cache and backups');
-            console.log('  init            Initialize JPM');
+            console.log('Try "jpm --help" for details.');
             return;
         }
 
@@ -56,9 +79,7 @@ async function main() {
                 cli.stopSpinner(false, 'Failed');
                 throw error;
             }
-        }
-
-        else if (command === 'init') {
+        } else if (command === 'init') {
             const cwd = process.cwd();
             const confirmed = await cli.confirm(`Initialize JPM structure in ${cwd}?`);
             if (confirmed) {
@@ -66,7 +87,10 @@ async function main() {
                 const rootDir = process.cwd();
 
                 // Config
-                await fileSystem.writeFileSafe(path.join(rootDir, '.jpm/config.json'), JSON.stringify({ version: '1.0' }, null, 2));
+                await fileSystem.writeFileSafe(
+                    path.join(rootDir, '.jpm/config.json'),
+                    JSON.stringify({ version: '1.0' }, null, 2),
+                );
 
                 // SafeFileSystem handles dir creation, but we want to ensure .gitignore exists too
                 const gitignorePath = path.join(rootDir, '.gitignore');
@@ -92,51 +116,37 @@ async function main() {
 
                 // JPM Master Rule
                 const { MASTER_TEMPLATE } = await import('./templates/master');
-                await fileSystem.writeFileSafe(path.join(rootDir, '.jpm/JPM_MASTER.md'), MASTER_TEMPLATE);
+                await fileSystem.writeFileSafe(
+                    path.join(rootDir, '.jpm/JPM_MASTER.md'),
+                    MASTER_TEMPLATE,
+                );
 
                 cli.showInfo('Success', 'Initialized .jpm in current directory');
             }
-        }
-
-        else if (command === 'plan') {
+        } else if (command === 'plan') {
             const { commandPlan } = await import('./commands/plan');
             await commandPlan(args.slice(1));
-        }
-
-        else if (command === 'design') {
+        } else if (command === 'design') {
             const { commandDesign } = await import('./commands/design');
             await commandDesign(args.slice(1));
-        }
-
-        else if (command === 'split') {
+        } else if (command === 'split') {
             const { commandSplit } = await import('./commands/split');
             await commandSplit(args.slice(1));
-        }
-
-        else if (command === 'sync') {
+        } else if (command === 'sync') {
             const { commandSync } = await import('./commands/sync');
             await commandSync();
-        }
-
-        else if (command === 'run') {
+        } else if (command === 'run') {
             const { commandRun } = await import('./commands/run');
             await commandRun();
-        }
-
-        else if (command === 'clean') {
+        } else if (command === 'clean') {
             const { commandClean } = await import('./commands/clean');
             await commandClean();
-        }
-
-        else if (command === 'config') {
+        } else if (command === 'config') {
             const { commandConfig } = await import('./commands/config');
             await commandConfig();
-        }
-
-        else {
+        } else {
             cli.showError('Unknown Command', `Command '${command}' not found.`);
         }
-
     } catch (error: any) {
         logger.error(error.message);
         if (error.suggestion) {

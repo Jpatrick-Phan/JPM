@@ -50,7 +50,7 @@ export class ResponseCache {
                     timestamp: Date.now(),
                     response,
                 }),
-                'utf-8'
+                'utf-8',
             );
         } catch (e) {
             logger.warn('Failed to write to cache');

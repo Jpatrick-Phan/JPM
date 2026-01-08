@@ -48,8 +48,7 @@ class SafeFileSystem {
     }
     isIgnored(targetPath) {
         try {
-            const relativePath = path_1.default.relative(this.rootDir, targetPath)
-                .split(path_1.default.sep).join('/');
+            const relativePath = path_1.default.relative(this.rootDir, targetPath).split(path_1.default.sep).join('/');
             return this.ig.ignores(relativePath);
         }
         catch (error) {

@@ -15,7 +15,9 @@ export async function commandSync() {
     try {
         await execAsync('gh --version');
     } catch (e) {
-        throw new Error('GitHub CLI (gh) is not installed or not in PATH. Please install it first.');
+        throw new Error(
+            'GitHub CLI (gh) is not installed or not in PATH. Please install it first.',
+        );
     }
 
     // 2. Check if inside a git repo
@@ -29,7 +31,7 @@ export async function commandSync() {
     const tasksDir = path.join(process.cwd(), '.jpm/storage/tasks');
     try {
         const files = await fs.readdir(tasksDir);
-        const taskFiles = files.filter(f => f.startsWith('task-') && f.endsWith('.md'));
+        const taskFiles = files.filter((f) => f.startsWith('task-') && f.endsWith('.md'));
 
         if (taskFiles.length === 0) {
             cli.showError('No Tasks', 'No tasks found to sync.');
@@ -63,7 +65,9 @@ export async function commandSync() {
         cli.stopSpinner(true, `Found ${taskFiles.length} tasks ready to sync.`);
 
         // 4. Create Parent Issue via GH CLI
-        const confirmed = await cli.confirm(`Create GitHub Issue "${parentTitle}" with ${taskFiles.length} sub-tasks?`);
+        const confirmed = await cli.confirm(
+            `Create GitHub Issue "${parentTitle}" with ${taskFiles.length} sub-tasks?`,
+        );
         if (!confirmed) return;
 
         cli.startSpinner('Creating GitHub Issue...');
@@ -82,7 +86,6 @@ export async function commandSync() {
 
         // Cleanup
         await fs.unlink(bodyFile);
-
     } catch (error: any) {
         cli.stopSpinner(false, 'Sync failed');
         throw error;
